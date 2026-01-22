@@ -74,10 +74,16 @@ def get_face_swapper() -> Any:
 
     with THREAD_LOCK:
         if FACE_SWAPPER is None:
-            model_name = "inswapper_128.onnx"
-            if "CUDAExecutionProvider" in modules.globals.execution_providers:
-                model_name = "inswapper_128_fp16.onnx"
-            model_path = os.path.join(models_dir, model_name)
+            # Try fp16 version first, fall back to regular version
+            fp16_model_path = os.path.join(models_dir, "inswapper_128_fp16.onnx")
+            regular_model_path = os.path.join(models_dir, "inswapper_128.onnx")
+
+            # Prefer fp16 if it exists, otherwise use regular version
+            if os.path.exists(fp16_model_path):
+                model_path = fp16_model_path
+            else:
+                model_path = regular_model_path
+
             update_status(f"Loading face swapper model from: {model_path}", NAME)
             try:
                 # Optimized provider configuration for Apple Silicon
